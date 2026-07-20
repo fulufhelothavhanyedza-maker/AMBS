@@ -1,8 +1,11 @@
-function simulateControllerResponse(decision) {
+function simulateControllerResponse(decision, accessPolicy) {
+  const targetResource = accessPolicy?.accessPoint?.name || "entry_gate_a";
+
   if (decision.outcome === "allow") {
     return {
       controllerResponse: "granted",
       responsePayload: {
+        targetResource,
         actuator: "door_lock",
         status: "opened",
         ttlSeconds: 8
@@ -14,6 +17,7 @@ function simulateControllerResponse(decision) {
     return {
       controllerResponse: "manual_review",
       responsePayload: {
+        targetResource,
         queue: "security_desk",
         priority: "medium"
       }
@@ -23,6 +27,7 @@ function simulateControllerResponse(decision) {
   return {
     controllerResponse: "blocked",
     responsePayload: {
+      targetResource,
       actuator: "door_lock",
       status: "locked",
       alarmRaised: true

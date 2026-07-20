@@ -6,6 +6,7 @@ const { evaluateRisk } = require("../services/riskEngine");
 const { selectModalities } = require("../services/modalitySelectionEngine");
 const { fuseModalities } = require("../services/fusionEngine");
 const { decideAccess } = require("../services/decisionEngine");
+const { resolveAccessPoint, evaluateAccessPolicy } = require("../services/accessPolicyService");
 const { simulateControllerResponse } = require("../services/accessController");
 const { writeAuditLog } = require("../services/auditService");
 const { writeMonitoringEvent } = require("../services/monitoringService");
@@ -47,7 +48,9 @@ router.post(
       primaryModality,
       confidenceScore,
       sourceChannel = "internal_portal",
-      modalityScores = {}
+      modalityScores = {},
+      accessPointId,
+      targetResource = "entry_gate_a"
     } = request.body;
 
     if (!subjectId || !primaryModality || confidenceScore === undefined) {
@@ -72,13 +75,27 @@ router.post(
       isOffHours: false
     });
 
+    const strictAccessPointLookup = Object.prototype.hasOwnProperty.call(request.body, "accessPointId")
+      || Object.prototype.hasOwnProperty.call(request.body, "targetResource");
+    const accessPoint = await resolveAccessPoint({ accessPointId, targetResource });
+
+    if (strictAccessPointLookup && !accessPoint) {
+      throw createHttpError(400, "The supplied access point could not be found.");
+    }
+
+    const accessPolicy = await evaluateAccessPolicy({
+      accessPoint,
+      riskLevel: risk.riskLevel
+    });
+
     const modalities = await selectModalities(risk.riskScore);
     const fusion = fuseModalities(modalities.modalities, modalityScores);
     const decision = await decideAccess({
       riskScore: risk.riskScore,
-      fusedScore: fusion.fusedScore
+      fusedScore: fusion.fusedScore,
+      accessPolicy
     });
-    const controller = simulateControllerResponse(decision);
+    const controller = simulateControllerResponse(decision, accessPolicy);
 
     const client = await getClient();
 
@@ -172,7 +189,8 @@ router.post(
             adjustedScore: decision.adjustedScore,
             thresholds: decision.thresholds,
             riskLevel: risk.riskLevel,
-            ruleName: modalities.ruleName
+            ruleName: modalities.ruleName,
+            accessPolicy: decision.policySummary
           })
         ]
       );
@@ -188,7 +206,12 @@ router.post(
           VALUES ($1, $2, $3, $4::jsonb)
           RETURNING id, decision_id, target_resource, controller_response, delivered_at, response_payload
         `,
-        [decisionResult.rows[0].id, "entry_gate_a", controller.controllerResponse, JSON.stringify(controller.responsePayload)]
+        [
+          decisionResult.rows[0].id,
+          accessPoint?.name || targetResource,
+          controller.controllerResponse,
+          JSON.stringify(controller.responsePayload)
+        ]
       );
 
       await client.query("COMMIT");
@@ -203,7 +226,9 @@ router.post(
           riskLevel: risk.riskLevel,
           modalities: modalities.modalities,
           fusedScore: fusion.fusedScore,
-          decision: decision.outcome
+          decision: decision.outcome,
+          accessPoint: decision.policySummary?.accessPoint,
+          policyReason: decision.policySummary?.reason
         },
         ipAddress: request.ip
       });
@@ -217,7 +242,9 @@ router.post(
           attemptId: attempt.id,
           decision: decision.outcome,
           riskScore: risk.riskScore,
-          fusedScore: fusion.fusedScore
+          fusedScore: fusion.fusedScore,
+          accessPoint: decision.policySummary?.accessPoint,
+          policyReason: decision.policySummary?.reason
         }
       });
 

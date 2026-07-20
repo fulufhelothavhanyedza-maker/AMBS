@@ -37,3 +37,9 @@ Install backend dependencies when you are ready to start the FastAPI implementat
 ```powershell
 pip install -r backend/requirements.txt
 ```
+
+Start the initial FastAPI app:
+
+```powershell
+uvicorn backend.app.main:app --reload
+```

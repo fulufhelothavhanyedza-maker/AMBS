@@ -32,6 +32,7 @@
 
 - `GET /api/authentication/attempts`
 - `POST /api/authentication/attempts` (runs risk + adaptive modality + fusion + decision + simulated access controller)
+	Optional request fields: `accessPointId` or `targetResource` to evaluate `access_points` and `access_policies` before the controller simulation.
 
 ## Engine endpoints
 
