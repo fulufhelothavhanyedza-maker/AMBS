@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication | AMBS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+  <main class="page">
+    <nav class="top-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="users.html">User management</a>
+      <a href="enrollment.html">Enrolment</a>
+      <a href="authentication.html">Authentication</a>
+      <a href="audit.html">Audit logs</a>
+      <a href="monitoring.html">Event monitoring</a>
+      <a href="settings.html">System configuration</a>
+    </nav>
+    <h1>Authentication</h1>
+    <div class="grid-2">
+      <section class="card">
+        <h2>Run authentication</h2>
+        <form id="run-authentication-form">
+          <label for="auth-subject-id">Subject ID</label>
+          <input id="auth-subject-id" name="subjectId" required>
+          <label for="auth-primary-modality">Primary modality</label>
+          <select id="auth-primary-modality" name="primaryModality">
+            <option value="fingerprint">Fingerprint</option>
+            <option value="facial">Facial</option>
+            <option value="iris">Iris</option>
+            <option value="voice">Voice</option>
+            <option value="pin">PIN</option>
+          </select>
+          <label for="auth-confidence-score">Confidence score</label>
+          <input id="auth-confidence-score" name="confidenceScore" type="number" min="0" max="100" step="0.01" required>
+          <label for="auth-source-channel">Source channel</label>
+          <input id="auth-source-channel" name="sourceChannel" value="internal_portal">
+          <label for="score-fingerprint">Fingerprint score</label>
+          <input id="score-fingerprint" name="fingerprintScore" type="number" min="0" max="100" step="0.01">
+          <label for="score-facial">Facial score</label>
+          <input id="score-facial" name="facialScore" type="number" min="0" max="100" step="0.01">
+          <label for="score-iris">Iris score</label>
+          <input id="score-iris" name="irisScore" type="number" min="0" max="100" step="0.01">
+          <button type="submit">Process authentication</button>
+        </form>
+      </section>
+      <section class="card">
+        <h2>Engine result</h2>
+        <pre id="authentication-result"></pre>
+      </section>
+    </div>
+    <section class="card">
+      <button id="load-attempts" type="button">Refresh attempts</button>
+      <div id="attempts-table"></div>
+    </section>
+  </main>
+  <script src="../javascript/app.js"></script>
+</body>
+
+</html>

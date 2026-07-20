@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | AMBS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+  <main class="page">
+    <nav class="top-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="users.html">User management</a>
+      <a href="enrollment.html">Enrolment</a>
+      <a href="authentication.html">Authentication</a>
+      <a href="audit.html">Audit logs</a>
+      <a href="monitoring.html">Event monitoring</a>
+      <a href="settings.html">System configuration</a>
+    </nav>
+    <h1>Settings</h1>
+    <div class="grid-2">
+      <section class="card">
+        <h2>Update configuration entry</h2>
+        <form id="update-configuration-form">
+          <label for="config-key">Key</label>
+          <input id="config-key" name="key" required>
+          <label for="config-value">JSON value</label>
+          <textarea id="config-value" name="value" rows="4" required>{"enabled":true}</textarea>
+          <label for="config-description">Description</label>
+          <input id="config-description" name="description">
+          <button type="submit">Upsert configuration</button>
+        </form>
+      </section>
+      <section class="card">
+        <h2>Current configuration</h2>
+        <button id="load-configuration" type="button">Refresh configuration</button>
+        <div id="configuration-table"></div>
+      </section>
+    </div>
+  </main>
+  <script src="../javascript/app.js"></script>
+</body>
+
+</html>

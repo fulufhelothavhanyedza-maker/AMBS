@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrollment | AMBS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+  <main class="page">
+    <nav class="top-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="users.html">User management</a>
+      <a href="enrollment.html">Enrolment</a>
+      <a href="authentication.html">Authentication</a>
+      <a href="audit.html">Audit logs</a>
+      <a href="monitoring.html">Event monitoring</a>
+      <a href="settings.html">System configuration</a>
+    </nav>
+    <h1>Enrollment</h1>
+    <div class="grid-2">
+      <section class="card">
+        <h2>Create subject</h2>
+        <form id="create-subject-form">
+          <label for="subject-reference">External reference</label>
+          <input id="subject-reference" name="externalReference" required>
+          <label for="subject-first-name">First name</label>
+          <input id="subject-first-name" name="firstName" required>
+          <label for="subject-last-name">Last name</label>
+          <input id="subject-last-name" name="lastName" required>
+          <label for="subject-email">Email</label>
+          <input id="subject-email" name="email" type="email">
+          <label for="subject-phone">Phone</label>
+          <input id="subject-phone" name="phone">
+          <button type="submit">Create subject</button>
+        </form>
+      </section>
+      <section class="card">
+        <h2>Create enrolment</h2>
+        <form id="create-enrolment-form">
+          <label for="enrol-subject-id">Subject ID</label>
+          <input id="enrol-subject-id" name="subjectId" required>
+          <label for="enrol-modality">Modality</label>
+          <select id="enrol-modality" name="modality">
+            <option value="fingerprint">Fingerprint</option>
+            <option value="facial">Facial</option>
+            <option value="iris">Iris</option>
+            <option value="voice">Voice</option>
+            <option value="pin">PIN</option>
+          </select>
+          <label for="template-reference">Template reference</label>
+          <input id="template-reference" name="templateReference" required>
+          <label for="template-quality">Template quality</label>
+          <input id="template-quality" name="templateQuality" type="number" min="0" max="100" step="0.01">
+          <button type="submit">Create enrolment</button>
+        </form>
+      </section>
+    </div>
+    <section class="card">
+      <button id="load-subjects" type="button">Refresh subjects</button>
+      <div id="subjects-table"></div>
+    </section>
+    <section class="card">
+      <button id="load-enrolments" type="button">Refresh enrolments</button>
+      <div id="enrolments-table"></div>
+    </section>
+  </main>
+  <script src="../javascript/app.js"></script>
+</body>
+
+</html>

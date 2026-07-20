@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | AMBS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <main class="page">
+    <nav class="top-nav">
+      <a href="login.html">Login</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+    <h1>Login</h1>
+    <p class="muted">Administrator login for AMBS REST API access.</p>
+    <div class="card">
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+        <button type="submit">Sign in</button>
+      </form>
+      <div id="login-result" class="status"></div>
+    </div>
+  </main>
+  <script src="../javascript/app.js"></script>
+</body>
+</html>

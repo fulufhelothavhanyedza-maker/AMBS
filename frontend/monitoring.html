@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring | AMBS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+  <main class="page">
+    <nav class="top-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="users.html">User management</a>
+      <a href="enrollment.html">Enrolment</a>
+      <a href="authentication.html">Authentication</a>
+      <a href="audit.html">Audit logs</a>
+      <a href="monitoring.html">Event monitoring</a>
+      <a href="settings.html">System configuration</a>
+    </nav>
+    <h1>Monitoring</h1>
+    <div class="grid-2">
+      <section class="card">
+        <h2>Create event</h2>
+        <form id="create-monitoring-event-form">
+          <label for="event-type">Event type</label>
+          <input id="event-type" name="eventType" required>
+          <label for="event-severity">Severity</label>
+          <select id="event-severity" name="severity">
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="critical">Critical</option>
+          </select>
+          <label for="event-source">Source component</label>
+          <input id="event-source" name="sourceComponent" required>
+          <label for="event-message">Message</label>
+          <textarea id="event-message" name="message" rows="3" required></textarea>
+          <button type="submit">Create event</button>
+        </form>
+      </section>
+      <section class="card">
+        <h2>Recent events</h2>
+        <button id="load-monitoring-events" type="button">Refresh events</button>
+        <div id="monitoring-table"></div>
+      </section>
+    </div>
+  </main>
+  <script src="../javascript/app.js"></script>
+</body>
+
+</html>
