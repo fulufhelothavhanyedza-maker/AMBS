@@ -12,6 +12,7 @@ const auditRoutes = require("./routes/auditRoutes");
 const monitoringRoutes = require("./routes/monitoringRoutes");
 const configurationRoutes = require("./routes/configurationRoutes");
 const engineRoutes = require("./routes/engineRoutes");
+const reportsRoutes = require("./routes/reportsRoutes");
 const { requireAuth } = require("./middleware/auth");
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/audit", requireAuth, auditRoutes);
 app.use("/api/monitoring", requireAuth, monitoringRoutes);
 app.use("/api/configuration", requireAuth, configurationRoutes);
 app.use("/api/engines", requireAuth, engineRoutes);
+app.use("/api/reports", requireAuth, reportsRoutes);
 
 app.use((error, request, response, next) => {
   const statusCode = Number.isInteger(error.statusCode) ? error.statusCode : 500;

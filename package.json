@@ -5,8 +5,15 @@
   "private": true,
   "scripts": {
     "start": "node backend/src/server.js",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:lint": "npm --prefix web run lint",
+    "web:test": "npm --prefix web run test",
     "db:check": "node backend/src/scripts/checkDatabaseConnection.js",
-    "db:init": "node backend/src/scripts/initializeDatabase.js"
+    "db:init": "node backend/src/scripts/initializeDatabase.js",
+    "test": "node --test tests/*.test.js",
+    "test:python": ".venv\\Scripts\\python -m unittest discover -s backend/tests",
+    "test:all": "npm test && npm run test:python && npm run web:lint && npm run web:test && npm run web:build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -18,11 +18,31 @@
       <a href="audit.html">Audit logs</a>
       <a href="monitoring.html">Event monitoring</a>
       <a href="settings.html">System configuration</a>
+      <a href="reports.html">Reports</a>
     </nav>
     <h1>Reports</h1>
-    <section class="card">
-      <p class="muted">Reports are not implemented yet. This page is reserved for future API-backed reporting.</p>
-    </section>
+    <p class="muted">Live operational analytics for authentication attempts, risk assessment, modality usage, and
+      decisions.</p>
+    <p class="muted">Generated at: <span id="reports-generated-at">pending</span></p>
+    <button id="load-reports" type="button">Refresh analytics</button>
+    <div class="grid-2" style="margin-top: 1rem;">
+      <section class="card">
+        <h2>Attempt status</h2>
+        <div id="reports-status-table"></div>
+      </section>
+      <section class="card">
+        <h2>Risk levels</h2>
+        <div id="reports-risk-table"></div>
+      </section>
+      <section class="card">
+        <h2>Primary modalities</h2>
+        <div id="reports-modality-table"></div>
+      </section>
+      <section class="card">
+        <h2>Decision outcomes</h2>
+        <div id="reports-decisions-table"></div>
+      </section>
+    </div>
   </main>
   <script src="../javascript/app.js"></script>
 </body>

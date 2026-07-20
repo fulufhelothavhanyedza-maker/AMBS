@@ -8,6 +8,7 @@ const { fuseModalities } = require("../services/fusionEngine");
 const { decideAccess } = require("../services/decisionEngine");
 const { resolveAccessPoint, evaluateAccessPolicy } = require("../services/accessPolicyService");
 const { simulateControllerResponse } = require("../services/accessController");
+const { evaluateBiometrics } = require("../services/biometricEngineClient");
 const { writeAuditLog } = require("../services/auditService");
 const { writeMonitoringEvent } = require("../services/monitoringService");
 
@@ -49,6 +50,7 @@ router.post(
       confidenceScore,
       sourceChannel = "internal_portal",
       modalityScores = {},
+      biometricEvaluationRequest,
       accessPointId,
       targetResource = "entry_gate_a"
     } = request.body;
@@ -96,6 +98,15 @@ router.post(
       accessPolicy
     });
     const controller = simulateControllerResponse(decision, accessPolicy);
+    const biometricEvaluation = Array.isArray(biometricEvaluationRequest?.samples) && biometricEvaluationRequest.samples.length > 0
+      ? await evaluateBiometrics({
+        subjectId,
+        samples: biometricEvaluationRequest.samples,
+        strategy: biometricEvaluationRequest.strategy,
+        baseThreshold: biometricEvaluationRequest.baseThreshold,
+        adaptationWindow: biometricEvaluationRequest.adaptationWindow
+      })
+      : null;
 
     const client = await getClient();
 
@@ -228,7 +239,9 @@ router.post(
           fusedScore: fusion.fusedScore,
           decision: decision.outcome,
           accessPoint: decision.policySummary?.accessPoint,
-          policyReason: decision.policySummary?.reason
+          policyReason: decision.policySummary?.reason,
+          biometricDecision: biometricEvaluation?.fusion?.decision || null,
+          biometricScore: biometricEvaluation?.fusion?.fused_score ?? null
         },
         ipAddress: request.ip
       });
@@ -244,7 +257,9 @@ router.post(
           riskScore: risk.riskScore,
           fusedScore: fusion.fusedScore,
           accessPoint: decision.policySummary?.accessPoint,
-          policyReason: decision.policySummary?.reason
+          policyReason: decision.policySummary?.reason,
+          biometricDecision: biometricEvaluation?.fusion?.decision || null,
+          biometricScore: biometricEvaluation?.fusion?.fused_score ?? null
         }
       });
 
@@ -254,7 +269,8 @@ router.post(
         modalities,
         fusion: fusionResult.rows[0],
         decision: decisionResult.rows[0],
-        controller: controllerResult.rows[0]
+        controller: controllerResult.rows[0],
+        biometricEvaluation
       });
     } catch (error) {
       await client.query("ROLLBACK");

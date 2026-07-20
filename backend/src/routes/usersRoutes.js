@@ -1,25 +1,17 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 
-const { query } = require("../config/database");
+const { listUsers, createUser, updateUser } = require("../models/userModel");
 const { requireRole } = require("../middleware/auth");
 const { asyncHandler, createHttpError } = require("../utils/http");
-const { writeAuditLog } = require("../services/auditService");
+const { writeAuditLog } = require("../models/auditLogModel");
 
 const router = express.Router();
 
 router.get(
   "/",
   asyncHandler(async (request, response) => {
-    const result = await query(
-      `
-        SELECT id, username, full_name, email, role, status, last_login_at, created_at
-        FROM app_users
-        ORDER BY created_at DESC
-      `
-    );
-
-    response.json({ users: result.rows });
+    response.json({ users: await listUsers() });
   })
 );
 
@@ -34,25 +26,24 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const result = await query(
-      `
-        INSERT INTO app_users (username, password_hash, full_name, email, role)
-        VALUES ($1, $2, $3, $4, COALESCE($5, 'operator')::user_role)
-        RETURNING id, username, full_name, email, role, status, created_at
-      `,
-      [username, passwordHash, fullName, email || null, role || "operator"]
-    );
+    const user = await createUser({
+      username,
+      passwordHash,
+      fullName,
+      email: email || null,
+      role: role || "operator"
+    });
 
     await writeAuditLog({
       actorUserId: request.user.id,
       action: "users.create",
       entityType: "app_user",
-      entityId: result.rows[0].id,
-      details: { username: result.rows[0].username, role: result.rows[0].role },
+      entityId: user.id,
+      details: { username: user.username, role: user.role },
       ipAddress: request.ip
     });
 
-    response.status(201).json({ user: result.rows[0] });
+    response.status(201).json({ user });
   })
 );
 
@@ -63,21 +54,9 @@ router.patch(
     const { userId } = request.params;
     const { fullName, email, role, status } = request.body;
 
-    const result = await query(
-      `
-        UPDATE app_users
-        SET
-          full_name = COALESCE($2, full_name),
-          email = COALESCE($3, email),
-          role = COALESCE($4::user_role, role),
-          status = COALESCE($5::account_status, status)
-        WHERE id = $1
-        RETURNING id, username, full_name, email, role, status, last_login_at, updated_at
-      `,
-      [userId, fullName || null, email || null, role || null, status || null]
-    );
+    const user = await updateUser(userId, { fullName, email, role, status });
 
-    if (result.rowCount === 0) {
+    if (!user) {
       throw createHttpError(404, "User not found.");
     }
 
@@ -90,7 +69,7 @@ router.patch(
       ipAddress: request.ip
     });
 
-    response.json({ user: result.rows[0] });
+    response.json({ user });
   })
 );
 

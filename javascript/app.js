@@ -335,6 +335,36 @@ function bindSettingsPage() {
   loadConfig().catch(() => null);
 }
 
+function bindReportsPage() {
+  const button = document.getElementById("load-reports");
+
+  if (!button) {
+    return;
+  }
+
+  async function loadReports() {
+    const response = await apiRequest("/reports/analytics");
+
+    renderTable("reports-status-table", response.attemptStatusDistribution);
+    renderTable("reports-risk-table", response.riskLevelDistribution);
+    renderTable("reports-modality-table", response.modalityUsage);
+    renderTable("reports-decisions-table", response.decisionOutcomes);
+
+    const generatedAt = document.getElementById("reports-generated-at");
+    if (generatedAt) {
+      generatedAt.textContent = response.generatedAt;
+    }
+  }
+
+  button.addEventListener("click", () => loadReports().catch((error) => alert(error.message)));
+  loadReports().catch((error) => {
+    const generatedAt = document.getElementById("reports-generated-at");
+    if (generatedAt) {
+      generatedAt.textContent = error.message;
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   bindLoginPage();
   bindDashboardPage();
@@ -344,4 +374,5 @@ document.addEventListener("DOMContentLoaded", () => {
   bindAuditPage();
   bindMonitoringPage();
   bindSettingsPage();
+  bindReportsPage();
 });

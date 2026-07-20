@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f1f3ee;
+  --bg-elevated: #fbfdf8;
+  --ink: #182219;
+  --muted: #5f665d;
+  --line: #d7ddd3;
+  --brand: #245f4a;
+  --brand-strong: #154334;
+  --accent: #d89f54;
+  --danger: #9f3d33;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-heading);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 15%, #d3e3d7 0%, transparent 32%),
+    radial-gradient(circle at 85% 0%, #f1dbc3 0%, transparent 28%),
+    linear-gradient(155deg, #f6f7f3 0%, #edf1e8 100%);
+  color: var(--ink);
+  font-family: var(--font-heading), sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.portal-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 270px 1fr;
+}
+
+.portal-sidebar {
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-elevated) 85%, white);
+  backdrop-filter: blur(9px);
+}
+
+.portal-main {
+  padding: 1.5rem;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 12%, transparent);
+}
+
+.panel-soft {
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--line));
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--bg-elevated) 92%, white);
+}
+
+.kpi-value {
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.mono {
+  font-family: var(--font-mono), monospace;
+}
+
+@media (max-width: 1024px) {
+  .portal-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+}

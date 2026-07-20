@@ -15,6 +15,10 @@
 
 - `GET /api/dashboard/summary`
 
+## Reports
+
+- `GET /api/reports/analytics`
+
 ## User management
 
 - `GET /api/users`
@@ -41,6 +45,12 @@
 - `POST /api/engines/fusion/run`
 - `POST /api/engines/decision/run`
 - `POST /api/engines/access-controller/simulate`
+- `POST /api/engines/biometrics/quality`
+- `POST /api/engines/biometrics/fuse`
+- `POST /api/engines/biometrics/evaluate`
+- `GET /api/engines/biometrics/policies/default`
+- `POST /api/engines/biometrics/verify`
+- `POST /api/engines/biometrics/identify`
 
 ## Audit logs
 
@@ -68,7 +78,4 @@ The following pages are wired to the API through `javascript/app.js`:
 - `audit.html` -> audit logs
 - `monitoring.html` -> event monitoring
 - `settings.html` -> system configuration
-
-## Known gaps
-
-- `reports.html` is currently a placeholder page and is not wired to any API endpoint yet.
+- `reports.html` -> reports and analytics
