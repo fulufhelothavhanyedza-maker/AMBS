@@ -164,6 +164,7 @@ function bindDashboardPage() {
 function bindUsersPage() {
   const createForm = document.getElementById("create-user-form");
   const loadButton = document.getElementById("load-users");
+  const usersTable = document.getElementById("users-table");
 
   async function loadUsers() {
     const response = await apiRequest("/users");
@@ -187,7 +188,9 @@ function bindUsersPage() {
     });
   }
 
-  loadUsers().catch(() => null);
+  if (createForm || loadButton || usersTable) {
+    loadUsers().catch(() => null);
+  }
 }
 
 function bindEnrolmentPage() {
@@ -195,6 +198,8 @@ function bindEnrolmentPage() {
   const createEnrolmentForm = document.getElementById("create-enrolment-form");
   const loadSubjectsButton = document.getElementById("load-subjects");
   const loadEnrolmentsButton = document.getElementById("load-enrolments");
+  const subjectsTable = document.getElementById("subjects-table");
+  const enrolmentsTable = document.getElementById("enrolments-table");
 
   async function loadSubjects() {
     const response = await apiRequest("/enrolment/subjects");
@@ -271,14 +276,24 @@ function bindEnrolmentPage() {
     loadEnrolmentsButton.addEventListener("click", () => loadEnrolments().catch((error) => alert(error.message)));
   }
 
-  loadSubjects().catch(() => null);
-  loadEnrolments().catch(() => null);
+  if (
+    createSubjectForm ||
+    createEnrolmentForm ||
+    loadSubjectsButton ||
+    loadEnrolmentsButton ||
+    subjectsTable ||
+    enrolmentsTable
+  ) {
+    loadSubjects().catch(() => null);
+    loadEnrolments().catch(() => null);
+  }
 }
 
 function bindAuthenticationPage() {
   const form = document.getElementById("run-authentication-form");
   const loadButton = document.getElementById("load-attempts");
   const output = document.getElementById("authentication-result");
+  const attemptsTable = document.getElementById("attempts-table");
 
   async function loadAttempts() {
     const response = await apiRequest("/authentication/attempts");
@@ -364,7 +379,9 @@ function bindAuthenticationPage() {
     loadButton.addEventListener("click", () => loadAttempts().catch((error) => alert(error.message)));
   }
 
-  loadAttempts().catch(() => null);
+  if (form || loadButton || output || attemptsTable) {
+    loadAttempts().catch(() => null);
+  }
 }
 
 function bindAuditPage() {
@@ -386,6 +403,9 @@ function bindMonitoringPage() {
   const form = document.getElementById("create-monitoring-event-form");
   const button = document.getElementById("load-monitoring-events");
   const controllerButton = document.getElementById("load-controller-overview");
+  const monitoringTable = document.getElementById("monitoring-table");
+  const controllerDeviceTable = document.getElementById("controller-device-table");
+  const controllerEventsTable = document.getElementById("controller-events-table");
 
   async function loadEvents() {
     const response = await apiRequest("/monitoring/events");
@@ -424,13 +444,19 @@ function bindMonitoringPage() {
     controllerButton.addEventListener("click", () => loadControllerOverview().catch((error) => alert(error.message)));
   }
 
-  loadEvents().catch(() => null);
-  loadControllerOverview().catch(() => null);
+  if (form || button || monitoringTable) {
+    loadEvents().catch(() => null);
+  }
+
+  if (controllerButton || controllerDeviceTable || controllerEventsTable) {
+    loadControllerOverview().catch(() => null);
+  }
 }
 
 function bindSettingsPage() {
   const form = document.getElementById("update-configuration-form");
   const button = document.getElementById("load-configuration");
+  const configurationTable = document.getElementById("configuration-table");
 
   async function loadConfig() {
     const response = await apiRequest("/configuration");
@@ -459,7 +485,9 @@ function bindSettingsPage() {
     button.addEventListener("click", () => loadConfig().catch((error) => alert(error.message)));
   }
 
-  loadConfig().catch(() => null);
+  if (form || button || configurationTable) {
+    loadConfig().catch(() => null);
+  }
 }
 
 function bindReportsPage() {
