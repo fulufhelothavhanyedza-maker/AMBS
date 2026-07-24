@@ -11,8 +11,9 @@ async function seedDefaults(client) {
       INSERT INTO system_configuration (key, value, description)
       VALUES
         ('risk.thresholds', '{"low": 30, "medium": 60, "high": 85}', 'Default risk engine thresholds'),
-        ('authentication.defaultModalities', '["fingerprint"]', 'Default modalities for low-risk authentication'),
+        ('authentication.defaultModalities', '["face"]', 'Default modalities for low-risk authentication'),
         ('monitoring.retentionDays', '90', 'Default event monitoring retention period'),
+        ('accessController.settings', '{"mode": "simulator", "webhookUrl": null, "authToken": null, "adapter": "local_simulated_relay"}', 'Default access controller integration settings'),
         ('decision.thresholds', '{"allow": 75, "review": 55}', 'Default decision engine thresholds')
       ON CONFLICT (key) DO NOTHING
     `
@@ -28,9 +29,9 @@ async function seedDefaults(client) {
         description
       )
       VALUES
-        ('low-risk-default', 0, 39.99, ARRAY['fingerprint']::modality_type[], 'Low risk single-factor'),
-        ('medium-risk-step-up', 40, 69.99, ARRAY['fingerprint', 'facial']::modality_type[], 'Medium risk dual-factor'),
-        ('high-risk-strong', 70, 100, ARRAY['fingerprint', 'facial', 'iris']::modality_type[], 'High risk strong step-up')
+        ('low-risk-default', 0, 39.99, ARRAY['face']::modality_type[], 'Low risk face-first authentication'),
+        ('medium-risk-step-up', 40, 69.99, ARRAY['face', 'gait']::modality_type[], 'Medium risk multimodal step-up'),
+        ('high-risk-strong', 70, 100, ARRAY['face', 'gait']::modality_type[], 'High risk multimodal strong authentication')
       ON CONFLICT (name) DO NOTHING
     `
   );

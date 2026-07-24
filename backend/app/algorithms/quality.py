@@ -16,6 +16,8 @@ def assess_quality(sample: BiometricSample) -> QualityAssessmentResponse:
     quality *= 1.0 - 0.45 * clamp(context.motion_blur)
     quality *= 1.0 - 0.25 * clamp(context.noise)
     quality *= 1.0 - 0.20 * clamp(context.risk_level)
+    quality *= 0.40 + 0.60 * clamp(context.liveness_confidence)
+    quality *= 1.0 - 0.65 * clamp(context.spoof_risk)
 
     modality_bias = {
         BiometricModality.face: 1.00,
@@ -35,6 +37,9 @@ def assess_quality(sample: BiometricSample) -> QualityAssessmentResponse:
     else:
         recommendation = "step_up_required"
 
+    if context.spoof_risk >= 0.7 or context.liveness_confidence <= 0.35:
+        recommendation = "spoof_check_required"
+
     return QualityAssessmentResponse(
         modality=sample.modality,
         quality_score=quality_score,
@@ -44,6 +49,8 @@ def assess_quality(sample: BiometricSample) -> QualityAssessmentResponse:
             "motion_blur": round(context.motion_blur, 3),
             "noise": round(context.noise, 3),
             "risk_level": round(context.risk_level, 3),
+            "liveness_confidence": round(context.liveness_confidence, 3),
+            "spoof_risk": round(context.spoof_risk, 3),
             "modality_bias": round(modality_bias, 3),
         },
         recommendation=recommendation,

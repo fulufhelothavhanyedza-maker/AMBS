@@ -28,6 +28,16 @@ Everything below is aligned with your proposal and Chapter 4.
 
 MASTER IMPLEMENTATION ROADMAP
 
+WEEK 1 TARGET (Production-First Freeze)
+
+The AMBS production architecture is frozen to:
+
+Node.js/Express orchestration + Python/FastAPI biometric engine + PostgreSQL + pluggable hardware controller adapter.
+
+Reference implementation note:
+
+See `docs/PRODUCTION_ARCHITECTURE_FREEZE.md` for runtime boundaries, safety defaults, and environment controls.
+
 I would divide the project into 8 phases.
 
 PHASE 1Planning↓PHASE 2Development Environment↓PHASE 3Software Development↓PHASE 4AI Development↓PHASE 5Hardware Development↓PHASE 6System Integration↓PHASE 7Testing↓PHASE 8Evaluation

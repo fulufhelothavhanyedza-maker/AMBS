@@ -45,16 +45,25 @@
           <input id="enrol-subject-id" name="subjectId" required>
           <label for="enrol-modality">Modality</label>
           <select id="enrol-modality" name="modality">
-            <option value="fingerprint">Fingerprint</option>
-            <option value="facial">Facial</option>
-            <option value="iris">Iris</option>
-            <option value="voice">Voice</option>
-            <option value="pin">PIN</option>
+            <option value="face">Face</option>
+            <option value="gait">Gait</option>
           </select>
           <label for="template-reference">Template reference</label>
-          <input id="template-reference" name="templateReference" required>
+          <input id="template-reference" name="templateReference">
           <label for="template-quality">Template quality</label>
           <input id="template-quality" name="templateQuality" type="number" min="0" max="100" step="0.01">
+          <label for="feature-vector">Feature vector (optional)</label>
+          <textarea id="feature-vector" name="featureVector" rows="3" placeholder="0.91, 0.82, 0.73"></textarea>
+          <label for="capture-raw-signal">Raw capture signal (optional)</label>
+          <textarea id="capture-raw-signal" name="captureRawSignal" rows="3"
+            placeholder="0.2, 0.4, 0.6, 0.5, 0.45"></textarea>
+          <label for="capture-frame-count">Capture frame count</label>
+          <input id="capture-frame-count" name="captureFrameCount" type="number" min="1" step="1" value="18">
+          <label for="capture-duration">Capture duration</label>
+          <input id="capture-duration" name="captureDuration" type="number" min="0.1" step="0.1" value="1.2">
+          <label for="capture-sensor-confidence">Capture sensor confidence</label>
+          <input id="capture-sensor-confidence" name="captureSensorConfidence" type="number" min="0" max="1" step="0.01"
+            value="0.94">
           <button type="submit">Create enrolment</button>
         </form>
       </section>

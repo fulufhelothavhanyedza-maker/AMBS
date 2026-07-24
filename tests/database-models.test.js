@@ -7,7 +7,8 @@ const {
     calculateVectorDimension,
     createBiometricTemplate,
     revokeBiometricTemplate,
-    listBiometricTemplates
+    listBiometricTemplates,
+    updateBiometricTemplate
 } = require("../backend/src/models/biometricTemplateModel");
 const { writeAuditLog, listAuditLogs } = require("../backend/src/models/auditLogModel");
 
@@ -107,6 +108,41 @@ test("biometric template model can revoke templates", async () => {
 
     const template = await revokeBiometricTemplate("template-1");
     assert.equal(template.status, "revoked");
+});
+
+test("biometric template model can update templates and increment version", async () => {
+    let captured;
+    database.query = async (text, params) => {
+        captured = { text, params };
+        return {
+            rowCount: 1,
+            rows: [{
+                id: params[0],
+                subject_id: "subject-1",
+                modality: "face",
+                template_reference: params[1],
+                feature_vector: JSON.parse(params[2]),
+                vector_dimension: params[3],
+                template_quality: params[4],
+                status: params[5],
+                version: 2,
+                metadata: JSON.parse(params[6])
+            }]
+        };
+    };
+
+    const template = await updateBiometricTemplate("template-1", {
+        templateReference: "face-template-2",
+        featureVector: [0.2, 0.3, 0.4],
+        templateQuality: 95,
+        status: "enrolled",
+        metadata: { source: "refresh" }
+    });
+
+    assert.ok(captured.text.includes("version = version + 1"));
+    assert.equal(template.template_reference, "face-template-2");
+    assert.equal(template.vector_dimension, 3);
+    assert.equal(template.version, 2);
 });
 
 test("audit log model writes and lists audit records", async () => {

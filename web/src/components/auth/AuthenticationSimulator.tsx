@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { api, type IdentifyResponse, type VerifyResponse } from "@/lib/api";
 
 type Mode = "verify" | "identify";
-type Modality = "face" | "gait" | "fingerprint" | "voice" | "iris";
+type Modality = "face" | "gait";
 
 function parseEmbedding(raw: string): number[] {
     return raw
@@ -14,6 +14,10 @@ function parseEmbedding(raw: string): number[] {
 }
 
 export function AuthenticationSimulator() {
+    const [username, setUsername] = useState("admin");
+    const [password, setPassword] = useState("");
+    const [authMessage, setAuthMessage] = useState<string | null>(null);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [mode, setMode] = useState<Mode>("verify");
     const [modality, setModality] = useState<Modality>("face");
     const [probeEmbedding, setProbeEmbedding] = useState("0.91,0.82,0.73");
@@ -28,6 +32,32 @@ export function AuthenticationSimulator() {
 
     const probe = useMemo(() => parseEmbedding(probeEmbedding), [probeEmbedding]);
     const reference = useMemo(() => parseEmbedding(referenceEmbedding), [referenceEmbedding]);
+
+    async function authenticate() {
+        setAuthMessage(null);
+
+        if (!username || !password) {
+            setAuthMessage("Enter username and password to authenticate.");
+            return;
+        }
+
+        setIsAuthenticating(true);
+        try {
+            const response = await api.login({ username, password });
+            api.setToken(response.token);
+            setAuthMessage(`Authenticated as ${response.user.fullName || response.user.username}.`);
+            setPassword("");
+        } catch (authError) {
+            setAuthMessage(authError instanceof Error ? authError.message : "Authentication failed.");
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }
+
+    function clearAuthentication() {
+        api.clearToken();
+        setAuthMessage("Stored token cleared.");
+    }
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -76,6 +106,50 @@ export function AuthenticationSimulator() {
     return (
         <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
             <form className="panel-soft grid gap-4 p-4" onSubmit={onSubmit}>
+                <div className="rounded-md border border-[var(--line)] bg-white/80 p-3">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">API Authentication</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <label className="grid gap-1">
+                            <span className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Username</span>
+                            <input
+                                value={username}
+                                onChange={(event) => setUsername(event.target.value)}
+                                className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm"
+                            />
+                        </label>
+
+                        <label className="grid gap-1">
+                            <span className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Password</span>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(event) => setPassword(event.target.value)}
+                                className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm"
+                            />
+                        </label>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => authenticate().catch(() => null)}
+                            disabled={isAuthenticating}
+                            className="rounded-md border border-[var(--line)] bg-[var(--brand)] px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-white transition hover:bg-[var(--brand-strong)] disabled:opacity-60"
+                        >
+                            {isAuthenticating ? "Signing in..." : "Sign in"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={clearAuthentication}
+                            className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-xs font-medium uppercase tracking-[0.12em]"
+                        >
+                            Clear token
+                        </button>
+                    </div>
+
+                    {authMessage ? <p className="mt-2 text-xs text-[var(--muted)]">{authMessage}</p> : null}
+                </div>
+
                 <div className="grid gap-2">
                     <label htmlFor="auth-mode" className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                         Mode
@@ -101,9 +175,6 @@ export function AuthenticationSimulator() {
                         >
                             <option value="face">Face</option>
                             <option value="gait">Gait</option>
-                            <option value="fingerprint">Fingerprint</option>
-                            <option value="voice">Voice</option>
-                            <option value="iris">Iris</option>
                         </select>
                     </label>
 

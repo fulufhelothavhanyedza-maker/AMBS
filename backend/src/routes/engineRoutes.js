@@ -4,9 +4,10 @@ const { evaluateRisk } = require("../services/riskEngine");
 const { selectModalities } = require("../services/modalitySelectionEngine");
 const { fuseModalities } = require("../services/fusionEngine");
 const { decideAccess } = require("../services/decisionEngine");
-const { simulateControllerResponse } = require("../services/accessController");
+const { dispatchControllerDecision } = require("../services/accessController");
 const {
   evaluateQuality: evaluateBiometricQuality,
+  extractBiometrics,
   fuseBiometrics,
   evaluateBiometrics,
   verifyBiometrics,
@@ -80,22 +81,35 @@ router.post(
 router.post(
   "/access-controller/simulate",
   asyncHandler(async (request, response) => {
-    const { outcome } = request.body;
+    const { outcome, accessPolicy, controllerConfig } = request.body;
 
     if (!outcome) {
       throw createHttpError(400, "outcome is required.");
     }
 
-    response.json(simulateControllerResponse({ outcome }));
+    response.json(await dispatchControllerDecision({ outcome }, accessPolicy, controllerConfig || null));
+  })
+);
+
+router.post(
+  "/biometrics/extract",
+  asyncHandler(async (request, response) => {
+    const { samples } = request.body;
+
+    if (!Array.isArray(samples) || samples.length === 0) {
+      throw createHttpError(400, "samples must be a non-empty array.");
+    }
+
+    response.json(await extractBiometrics({ samples }));
   })
 );
 
 router.post(
   "/biometrics/quality",
   asyncHandler(async (request, response) => {
-    const { sample } = request.body;
+    const sample = request.body?.sample || request.body;
 
-    if (!sample) {
+    if (!sample || typeof sample !== "object") {
       throw createHttpError(400, "sample is required.");
     }
 

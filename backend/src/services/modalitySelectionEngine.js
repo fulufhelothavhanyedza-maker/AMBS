@@ -22,7 +22,7 @@ async function selectModalities(riskScore) {
     };
   }
 
-  const defaults = await getConfigurationValue("authentication.defaultModalities", ["fingerprint"]);
+  const defaults = await getConfigurationValue("authentication.defaultModalities", ["face"]);
   return {
     ruleName: "default-fallback",
     modalities: defaults

@@ -32,9 +32,52 @@ export function EnrollmentDashboard() {
     const [isSubmittingSubject, setIsSubmittingSubject] = useState(false);
     const [isSubmittingRecord, setIsSubmittingRecord] = useState(false);
     const [revokeInFlightId, setRevokeInFlightId] = useState<string | null>(null);
+    const [username, setUsername] = useState("admin");
+    const [password, setPassword] = useState("");
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(Boolean(api.getToken()));
+
+    function requireTokenOrFail(): boolean {
+        const token = api.getToken();
+        if (!token) {
+            setIsAuthenticated(false);
+            setError("Sign in to continue. Use the credentials provided for AMBS operator access.");
+            setIsLoading(false);
+            return false;
+        }
+
+        setIsAuthenticated(true);
+        return true;
+    }
+
+    async function authenticateFromEnrollment() {
+        setError(null);
+
+        if (!username || !password) {
+            setError("Enter username and password to continue.");
+            return;
+        }
+
+        setIsAuthenticating(true);
+        try {
+            const response = await api.login({ username, password });
+            api.setToken(response.token);
+            setIsAuthenticated(true);
+            setPassword("");
+            await loadAll();
+        } catch (authError) {
+            setError(authError instanceof Error ? authError.message : "Authentication failed.");
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }
 
     async function loadAll() {
         setError(null);
+        if (!requireTokenOrFail()) {
+            return;
+        }
+
         try {
             const [subjectsResponse, recordsResponse, templatesResponse] = await Promise.all([
                 api.getEnrolmentSubjects(),
@@ -60,6 +103,10 @@ export function EnrollmentDashboard() {
 
         async function bootstrap() {
             setError(null);
+            if (!requireTokenOrFail()) {
+                return;
+            }
+
             try {
                 const [subjectsResponse, recordsResponse, templatesResponse] = await Promise.all([
                     api.getEnrolmentSubjects(),
@@ -109,16 +156,22 @@ export function EnrollmentDashboard() {
     async function submitSubject(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError(null);
+        if (!requireTokenOrFail()) {
+            return;
+        }
+
         setIsSubmittingSubject(true);
 
         try {
-            await api.createEnrolmentSubject({
+            const response = await api.createEnrolmentSubject({
                 externalReference,
                 firstName,
                 lastName,
                 email: email || undefined,
                 phone: phone || undefined,
             });
+            setSubjects((previous) => [response.subject, ...previous]);
+            setSubjectId(response.subject.id);
             await loadAll();
         } catch (submissionError) {
             setError(submissionError instanceof Error ? submissionError.message : "Failed to create subject.");
@@ -130,6 +183,9 @@ export function EnrollmentDashboard() {
     async function submitRecord(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError(null);
+        if (!requireTokenOrFail()) {
+            return;
+        }
 
         const vector = parseVector(featureVector);
         if (!subjectId) {
@@ -162,6 +218,10 @@ export function EnrollmentDashboard() {
 
     async function revokeTemplate(templateId: string) {
         setError(null);
+        if (!requireTokenOrFail()) {
+            return;
+        }
+
         setRevokeInFlightId(templateId);
         try {
             await api.revokeBiometricTemplate(templateId);
@@ -176,6 +236,48 @@ export function EnrollmentDashboard() {
     return (
         <div className="space-y-4">
             {error ? <p className="rounded-md border border-[var(--danger)]/35 bg-white p-3 text-sm text-[var(--danger)]">{error}</p> : null}
+
+            {!isAuthenticated ? (
+                <section className="panel-soft grid gap-3 p-4">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Enrollment Access Sign-In</p>
+                    <p className="text-sm text-[var(--muted)]">Enrollment APIs require a bearer token. Sign in to continue.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                            value={username}
+                            onChange={(event) => setUsername(event.target.value)}
+                            className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm"
+                            placeholder="Username"
+                        />
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm"
+                            placeholder="Password"
+                        />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => authenticateFromEnrollment().catch(() => null)}
+                            disabled={isAuthenticating}
+                            className="rounded-md bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--brand-strong)] disabled:opacity-60"
+                        >
+                            {isAuthenticating ? "Signing in..." : "Sign In"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                api.clearToken();
+                                setIsAuthenticated(false);
+                            }}
+                            className="rounded-md border border-[var(--line)] px-4 py-2 text-sm"
+                        >
+                            Clear Token
+                        </button>
+                    </div>
+                </section>
+            ) : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <form className="panel-soft grid gap-3 p-4" onSubmit={submitSubject}>
@@ -208,9 +310,6 @@ export function EnrollmentDashboard() {
                         <select value={modality} onChange={(event) => setModality(event.target.value as Modality)} className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm">
                             <option value="face">Face</option>
                             <option value="gait">Gait</option>
-                            <option value="fingerprint">Fingerprint</option>
-                            <option value="voice">Voice</option>
-                            <option value="iris">Iris</option>
                         </select>
                         <input value={templateQuality} onChange={(event) => setTemplateQuality(event.target.value)} className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-sm" placeholder="Template quality (0-1)" />
                     </div>

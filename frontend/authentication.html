@@ -29,22 +29,46 @@
           <input id="auth-subject-id" name="subjectId" required>
           <label for="auth-primary-modality">Primary modality</label>
           <select id="auth-primary-modality" name="primaryModality">
-            <option value="fingerprint">Fingerprint</option>
-            <option value="facial">Facial</option>
-            <option value="iris">Iris</option>
-            <option value="voice">Voice</option>
-            <option value="pin">PIN</option>
+            <option value="face">Face</option>
+            <option value="gait">Gait</option>
           </select>
           <label for="auth-confidence-score">Confidence score</label>
           <input id="auth-confidence-score" name="confidenceScore" type="number" min="0" max="100" step="0.01" required>
           <label for="auth-source-channel">Source channel</label>
           <input id="auth-source-channel" name="sourceChannel" value="internal_portal">
-          <label for="score-fingerprint">Fingerprint score</label>
-          <input id="score-fingerprint" name="fingerprintScore" type="number" min="0" max="100" step="0.01">
-          <label for="score-facial">Facial score</label>
-          <input id="score-facial" name="facialScore" type="number" min="0" max="100" step="0.01">
-          <label for="score-iris">Iris score</label>
-          <input id="score-iris" name="irisScore" type="number" min="0" max="100" step="0.01">
+          <label>
+            <input name="isOffHours" type="checkbox">
+            Off-hours access attempt
+          </label>
+          <label for="auth-target-resource">Target resource</label>
+          <input id="auth-target-resource" name="targetResource" value="entry_gate_a">
+          <label for="score-face">Face score</label>
+          <input id="score-face" name="faceScore" type="number" min="0" max="100" step="0.01">
+          <label for="score-gait">Gait score</label>
+          <input id="score-gait" name="gaitScore" type="number" min="0" max="100" step="0.01">
+          <label for="embedding-face">Face embedding (optional)</label>
+          <textarea id="embedding-face" name="faceEmbedding" rows="3" placeholder="0.91, 0.82, 0.73"></textarea>
+          <label for="embedding-gait">Gait embedding (optional)</label>
+          <textarea id="embedding-gait" name="gaitEmbedding" rows="3" placeholder="0.88, 0.86, 0.84"></textarea>
+          <label for="signal-face">Face raw signal (optional)</label>
+          <textarea id="signal-face" name="faceRawSignal" rows="3" placeholder="0.2, 0.4, 0.6, 0.5, 0.45"></textarea>
+          <label for="face-frame-count">Face frame count</label>
+          <input id="face-frame-count" name="faceFrameCount" type="number" min="1" step="1" value="18">
+          <label for="face-capture-duration">Face capture duration</label>
+          <input id="face-capture-duration" name="faceCaptureDuration" type="number" min="0.1" step="0.1" value="1.2">
+          <label for="face-sensor-confidence">Face sensor confidence</label>
+          <input id="face-sensor-confidence" name="faceSensorConfidence" type="number" min="0" max="1" step="0.01"
+            value="0.94">
+          <label for="signal-gait">Gait raw signal (optional)</label>
+          <textarea id="signal-gait" name="gaitRawSignal" rows="3"
+            placeholder="0.1, 0.3, 0.65, 0.25, 0.7, 0.2"></textarea>
+          <label for="gait-frame-count">Gait frame count</label>
+          <input id="gait-frame-count" name="gaitFrameCount" type="number" min="1" step="1" value="24">
+          <label for="gait-capture-duration">Gait capture duration</label>
+          <input id="gait-capture-duration" name="gaitCaptureDuration" type="number" min="0.1" step="0.1" value="1.5">
+          <label for="gait-sensor-confidence">Gait sensor confidence</label>
+          <input id="gait-sensor-confidence" name="gaitSensorConfidence" type="number" min="0" max="1" step="0.01"
+            value="0.91">
           <button type="submit">Process authentication</button>
         </form>
       </section>

@@ -1,23 +1,53 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { api } from "@/lib/api";
+import { api, type BiometricPolicySummary, type ReportsAnalytics } from "@/lib/api";
 
 function asCount(value: number): string {
     return value.toString().padStart(2, "0");
 }
 
-export default async function DashboardPage() {
-    let analytics = null;
-    let policy = null;
+export default function DashboardPage() {
+    const [analytics, setAnalytics] = useState<ReportsAnalytics | null>(null);
+    const [policy, setPolicy] = useState<BiometricPolicySummary | null>(null);
 
-    try {
-        [analytics, policy] = await Promise.all([
-            api.getReportsAnalytics(),
-            api.getDefaultBiometricPolicy(),
-        ]);
-    } catch {
-        // Keep dashboard renderable when backend services are unavailable.
-    }
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadDashboardData() {
+            try {
+                const [analyticsPayload, policyPayload] = await Promise.all([
+                    api.getReportsAnalytics(),
+                    api.getDefaultBiometricPolicy(),
+                ]);
+
+                if (!isMounted) {
+                    return;
+                }
+
+                setAnalytics(analyticsPayload);
+                setPolicy(policyPayload);
+            } catch {
+                if (!isMounted) {
+                    return;
+                }
+
+                // Keep dashboard renderable when backend services are unavailable.
+                setAnalytics(null);
+                setPolicy(null);
+            }
+        }
+
+        loadDashboardData().catch(() => {
+            // The fetch logic already handles errors and fallback state.
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const totalAttempts = analytics
         ? analytics.byStatus.reduce((sum, item) => sum + item.count, 0)

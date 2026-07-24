@@ -18,11 +18,11 @@ function clampScore(value) {
 function fuseModalities(modalities, modalityScores) {
   const scoreMap = toScoreMap(modalityScores);
   const weights = {
-    fingerprint: 0.4,
-    facial: 0.3,
-    iris: 0.2,
-    voice: 0.05,
-    pin: 0.05
+    face: 0.55,
+    gait: 0.45,
+    fingerprint: 0.2,
+    iris: 0.15,
+    voice: 0.1
   };
 
   let totalWeight = 0;

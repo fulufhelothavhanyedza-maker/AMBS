@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from backend.app.schemas.biometrics import (
     BiometricSample,
+    ExtractionRequest,
     FusionRequest,
     IdentificationRequest,
     VerificationRequest,
@@ -9,6 +10,11 @@ from backend.app.schemas.biometrics import (
 from backend.app.services.biometric_engine import engine
 
 router = APIRouter()
+
+
+@router.post("/extract")
+def extract_biometrics(request: ExtractionRequest):
+    return engine.extract(request)
 
 
 @router.post("/quality")

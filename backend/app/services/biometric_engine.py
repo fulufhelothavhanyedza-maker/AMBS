@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.app.algorithms.extraction import extract_embeddings
 from backend.app.algorithms.policy import describe_policy
 from backend.app.algorithms.fusion import (
     evaluate_biometrics,
@@ -8,10 +9,13 @@ from backend.app.algorithms.fusion import (
     verify_request,
 )
 from backend.app.algorithms.quality import assess_quality
-from backend.app.schemas.biometrics import BiometricSample, FusionRequest, IdentificationRequest, VerificationRequest
+from backend.app.schemas.biometrics import BiometricSample, ExtractionRequest, FusionRequest, IdentificationRequest, VerificationRequest
 
 
 class BiometricEngine:
+    def extract(self, request: ExtractionRequest):
+        return extract_embeddings(request.samples)
+
     def assess_quality(self, sample: BiometricSample):
         return assess_quality(sample)
 

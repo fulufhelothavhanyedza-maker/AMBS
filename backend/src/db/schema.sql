@@ -16,7 +16,7 @@ END $$;
 
 DO $$
 BEGIN
-  CREATE TYPE modality_type AS ENUM ('fingerprint', 'facial', 'gait', 'iris', 'voice', 'pin');
+  CREATE TYPE modality_type AS ENUM ('face', 'gait', 'fingerprint', 'iris', 'voice');
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
@@ -228,6 +228,29 @@ CREATE TABLE IF NOT EXISTS access_controller_events (
   response_payload JSONB NOT NULL DEFAULT '{}'::JSONB
 );
 
+CREATE TABLE IF NOT EXISTS controller_dispatch_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_resource VARCHAR(150) NOT NULL,
+  outcome VARCHAR(50) NOT NULL,
+  controller_response VARCHAR(100) NOT NULL,
+  access_point JSONB,
+  command_payload JSONB NOT NULL DEFAULT '{}'::JSONB,
+  device_state VARCHAR(50) NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+  delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS controller_device_state (
+  target_resource VARCHAR(150) PRIMARY KEY,
+  access_point JSONB,
+  outcome VARCHAR(50) NOT NULL,
+  state VARCHAR(50) NOT NULL,
+  last_command JSONB NOT NULL DEFAULT '{}'::JSONB,
+  last_event_id UUID REFERENCES controller_dispatch_events(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_subjects_status ON subjects(status);
 CREATE INDEX IF NOT EXISTS idx_access_points_status ON access_points(status);
 CREATE INDEX IF NOT EXISTS idx_access_policies_access_point_id ON access_policies(access_point_id);
@@ -246,6 +269,9 @@ CREATE INDEX IF NOT EXISTS idx_monitoring_events_severity ON monitoring_events(s
 CREATE INDEX IF NOT EXISTS idx_risk_assessments_attempt_id ON risk_assessments(authentication_attempt_id);
 CREATE INDEX IF NOT EXISTS idx_fusion_results_attempt_id ON fusion_results(authentication_attempt_id);
 CREATE INDEX IF NOT EXISTS idx_decisions_attempt_id ON decisions(authentication_attempt_id);
+CREATE INDEX IF NOT EXISTS idx_access_controller_events_target_resource ON access_controller_events(target_resource);
+CREATE INDEX IF NOT EXISTS idx_controller_dispatch_events_target_resource ON controller_dispatch_events(target_resource);
+CREATE INDEX IF NOT EXISTS idx_controller_dispatch_events_delivered_at ON controller_dispatch_events(delivered_at DESC);
 
 DROP TRIGGER IF EXISTS trg_app_users_updated_at ON app_users;
 CREATE TRIGGER trg_app_users_updated_at
@@ -280,5 +306,11 @@ EXECUTE FUNCTION set_updated_at();
 DROP TRIGGER IF EXISTS trg_modality_selection_rules_updated_at ON modality_selection_rules;
 CREATE TRIGGER trg_modality_selection_rules_updated_at
 BEFORE UPDATE ON modality_selection_rules
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_controller_device_state_updated_at ON controller_device_state;
+CREATE TRIGGER trg_controller_device_state_updated_at
+BEFORE UPDATE ON controller_device_state
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();

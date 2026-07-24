@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+const AUTH_TOKEN_KEY = "ambs.auth.token";
 
 type RequestOptions = {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -6,11 +7,52 @@ type RequestOptions = {
     headers?: Record<string, string>;
 };
 
+function getStoredToken(): string | null {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    return window.localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+function storeToken(token: string): void {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+function clearStoredToken(): void {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+function resolveApiUrl(path: string): string {
+    if (/^https?:\/\//.test(path)) {
+        return path;
+    }
+
+    if (path.startsWith("/api/")) {
+        return path;
+    }
+
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${API_BASE_URL}${normalizedPath}`;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const token = getStoredToken();
+    const hasAuthorizationHeader = Boolean(options.headers?.Authorization);
+
+    const response = await fetch(resolveApiUrl(path), {
         method: options.method ?? "GET",
         headers: {
             "Content-Type": "application/json",
+            ...(token && !hasAuthorizationHeader ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers ?? {}),
         },
         body: options.body ? JSON.stringify(options.body) : undefined,
@@ -18,11 +60,39 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            clearStoredToken();
+        }
+
         const detail = await response.text();
-        throw new Error(`API request failed (${response.status}): ${detail || response.statusText}`);
+        let parsedDetail = detail;
+
+        try {
+            const parsed = detail ? (JSON.parse(detail) as { error?: string }) : null;
+            if (parsed && typeof parsed.error === "string" && parsed.error.trim()) {
+                parsedDetail = parsed.error;
+            }
+        } catch {
+            // Keep raw text detail if payload is not JSON.
+        }
+
+        throw new Error(`API request failed (${response.status}): ${parsedDetail || response.statusText}`);
     }
 
-    return (await response.json()) as T;
+    if (response.status === 204 || response.status === 205) {
+        return undefined as T;
+    }
+
+    const rawBody = await response.text();
+    if (!rawBody.trim()) {
+        return undefined as T;
+    }
+
+    try {
+        return JSON.parse(rawBody) as T;
+    } catch {
+        throw new Error(`API response was not valid JSON for ${path}`);
+    }
 }
 
 export type ReportsAnalytics = {
@@ -32,7 +102,7 @@ export type ReportsAnalytics = {
     byDecision: Array<{ decision: string; count: number }>;
 };
 
-export type Modality = "face" | "gait" | "fingerprint" | "voice" | "iris";
+export type Modality = "face" | "gait";
 
 export type EnrolmentSubject = {
     id: string;
@@ -140,6 +210,28 @@ export type IdentifyResponse = {
 };
 
 export const api = {
+    login(payload: { username: string; password: string }) {
+        return request<{ token: string; user: { id: string; username: string; fullName: string; role: string } }>(
+            "/api/auth/login",
+            {
+                method: "POST",
+                body: payload,
+            }
+        );
+    },
+
+    setToken(token: string) {
+        storeToken(token);
+    },
+
+    clearToken() {
+        clearStoredToken();
+    },
+
+    getToken() {
+        return getStoredToken();
+    },
+
     getReportsAnalytics() {
         return request<ReportsAnalytics>("/api/reports/analytics");
     },

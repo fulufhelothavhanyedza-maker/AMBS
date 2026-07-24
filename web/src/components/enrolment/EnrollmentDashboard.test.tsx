@@ -10,6 +10,7 @@ vi.mock("@/lib/api", async () => {
         ...actual,
         api: {
             ...actual.api,
+            getToken: vi.fn(),
             getEnrolmentSubjects: vi.fn(),
             getEnrolmentRecords: vi.fn(),
             getBiometricTemplates: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock("@/lib/api", async () => {
 });
 
 function seedApi() {
+    vi.mocked(api.getToken).mockReturnValue("test-token");
     vi.mocked(api.getEnrolmentSubjects).mockResolvedValue({
         subjects: [
             {

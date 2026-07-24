@@ -67,6 +67,47 @@ test("biometric client posts to the FastAPI quality endpoint", async () => {
     }
 });
 
+test("biometric client posts capture samples to the FastAPI extract endpoint", async () => {
+    const originalFetch = global.fetch;
+    const calls = [];
+
+    global.fetch = async (url, options) => {
+        calls.push({ url, options });
+        return createResponse({
+            samples: [
+                {
+                    modality: "face",
+                    embedding: [0.62, 0.48, 0.54, 0.59, 0.94, 0.6, 0.95, 0.95],
+                    quality_context: { lighting: 0.95, occlusion: 0.05, motion_blur: 0.02, noise: 0.03, risk_level: 0 },
+                    diagnostics: { frame_count: 18 }
+                }
+            ]
+        });
+    };
+
+    try {
+        const payload = await biometricClient.extractBiometrics({
+            samples: [
+                {
+                    modality: "face",
+                    raw_signal: [0.2, 0.4, 0.6, 0.5],
+                    frame_count: 18,
+                    capture_duration: 1.2,
+                    sensor_confidence: 0.94,
+                    quality_context: { lighting: 0.95, occlusion: 0.05, motion_blur: 0.02, noise: 0.03, risk_level: 0 }
+                }
+            ]
+        });
+
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, "http://biometric-engine.local:8000/biometrics/extract");
+        assert.equal(calls[0].options.method, "POST");
+        assert.equal(payload.samples[0].modality, "face");
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
 test("engine router proxies biometric evaluate requests", async () => {
     const originalFetch = global.fetch;
     const calls = [];
@@ -101,6 +142,88 @@ test("engine router proxies biometric evaluate requests", async () => {
         assert.equal(calls.length, 1);
         assert.equal(calls[0].url, "http://biometric-engine.local:8000/biometrics/evaluate");
         assert.equal(result.body.fusion.decision, "accept");
+    } finally {
+        global.fetch = originalFetch;
+        await new Promise((resolve) => server.close(resolve));
+    }
+});
+
+test("engine router proxies biometric quality requests with direct sample payload", async () => {
+    const originalFetch = global.fetch;
+    const calls = [];
+
+    global.fetch = async (url, options) => {
+        calls.push({ url, options });
+        return createResponse({ modality: "face", quality_score: 84, recommendation: "use_with_fusion" });
+    };
+
+    const app = express();
+    app.use(express.json());
+    app.use("/api/engines", engineRoutes);
+
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+        const result = await postJson(`http://127.0.0.1:${address.port}/api/engines/biometrics/quality`, {
+            modality: "face",
+            embedding: [0.9, 0.8, 0.7],
+            quality_context: { lighting: 0.9, occlusion: 0.0, motion_blur: 0.0, noise: 0.0, risk_level: 0.0 }
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, "http://biometric-engine.local:8000/biometrics/quality");
+        assert.equal(result.body.quality_score, 84);
+    } finally {
+        global.fetch = originalFetch;
+        await new Promise((resolve) => server.close(resolve));
+    }
+});
+
+test("engine router proxies biometric extract requests", async () => {
+    const originalFetch = global.fetch;
+    const calls = [];
+
+    global.fetch = async (url, options) => {
+        calls.push({ url, options });
+        return createResponse({
+            samples: [
+                {
+                    modality: "gait",
+                    embedding: [0.55, 0.42, 0.51, 0.53, 0.91, 0.92, 0.94, 0.78],
+                    quality_context: { lighting: 0.88, occlusion: 0.0, motion_blur: 0.08, noise: 0.06, risk_level: 0.02 },
+                    diagnostics: { cadence: 0.53 }
+                }
+            ]
+        });
+    };
+
+    const app = express();
+    app.use(express.json());
+    app.use("/api/engines", engineRoutes);
+
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+        const result = await postJson(`http://127.0.0.1:${address.port}/api/engines/biometrics/extract`, {
+            samples: [
+                {
+                    modality: "gait",
+                    raw_signal: [0.1, 0.3, 0.65, 0.25, 0.7, 0.2],
+                    frame_count: 24,
+                    capture_duration: 1.5,
+                    sensor_confidence: 0.91,
+                    quality_context: { lighting: 0.88, occlusion: 0.0, motion_blur: 0.08, noise: 0.06, risk_level: 0.02 }
+                }
+            ]
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, "http://biometric-engine.local:8000/biometrics/extract");
+        assert.equal(result.body.samples[0].modality, "gait");
     } finally {
         global.fetch = originalFetch;
         await new Promise((resolve) => server.close(resolve));

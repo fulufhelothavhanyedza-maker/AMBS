@@ -12,6 +12,7 @@ const auditRoutes = require("./routes/auditRoutes");
 const monitoringRoutes = require("./routes/monitoringRoutes");
 const configurationRoutes = require("./routes/configurationRoutes");
 const engineRoutes = require("./routes/engineRoutes");
+const controllerRoutes = require("./routes/controllerRoutes");
 const reportsRoutes = require("./routes/reportsRoutes");
 const { requireAuth } = require("./middleware/auth");
 
@@ -30,6 +31,7 @@ app.get("/health", (request, response) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/controller", controllerRoutes);
 app.use("/api/dashboard", requireAuth, dashboardRoutes);
 app.use("/api/users", requireAuth, usersRoutes);
 app.use("/api/enrolment", requireAuth, enrolmentRoutes);

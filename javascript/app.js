@@ -65,6 +65,48 @@ function renderTable(targetId, rows) {
   target.innerHTML = `<table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
+function parseEmbedding(rawValue) {
+  if (!rawValue) {
+    return [];
+  }
+
+  return String(rawValue)
+    .split(",")
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value));
+}
+
+function buildCaptureSample(modality, rawSignal, frameCount, captureDuration, sensorConfidence) {
+  const parsedSignal = parseEmbedding(rawSignal);
+  if (parsedSignal.length < 4) {
+    return null;
+  }
+
+  return {
+    modality,
+    raw_signal: parsedSignal,
+    frame_count: Number(frameCount) || 12,
+    capture_duration: Number(captureDuration) || 1,
+    sensor_confidence: Number(sensorConfidence) || 0.9,
+    quality_context: {
+      lighting: 0.9,
+      occlusion: 0,
+      motion_blur: 0,
+      noise: 0,
+      risk_level: 0
+    }
+  };
+}
+
+function parseOptionalNumber(value) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : undefined;
+}
+
 function bindLoginPage() {
   const form = document.getElementById("login-form");
   if (!form) {
@@ -182,9 +224,36 @@ function bindEnrolmentPage() {
       event.preventDefault();
       const formData = new FormData(createEnrolmentForm);
       const payload = Object.fromEntries(formData.entries());
-      if (payload.templateQuality) {
-        payload.templateQuality = Number(payload.templateQuality);
+      const captureSamples = [];
+
+      const faceCaptureSample = buildCaptureSample(
+        "face",
+        formData.get("captureRawSignal"),
+        formData.get("captureFrameCount"),
+        formData.get("captureDuration"),
+        formData.get("captureSensorConfidence")
+      );
+
+      if (faceCaptureSample && payload.modality === "face") {
+        captureSamples.push(faceCaptureSample);
       }
+
+      const gaitCaptureSample = buildCaptureSample(
+        "gait",
+        formData.get("captureRawSignal"),
+        formData.get("captureFrameCount"),
+        formData.get("captureDuration"),
+        formData.get("captureSensorConfidence")
+      );
+
+      if (gaitCaptureSample && payload.modality === "gait") {
+        captureSamples.push(gaitCaptureSample);
+      }
+
+      payload.templateQuality = parseOptionalNumber(payload.templateQuality);
+      payload.featureVector = parseEmbedding(formData.get("featureVector"));
+      payload.captureSamples = captureSamples;
+
       await apiRequest("/enrolment/records", {
         method: "POST",
         body: JSON.stringify(payload)
@@ -220,16 +289,62 @@ function bindAuthenticationPage() {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(form);
+      const faceEmbedding = parseEmbedding(formData.get("faceEmbedding"));
+      const gaitEmbedding = parseEmbedding(formData.get("gaitEmbedding"));
+      const samples = [];
+      const captureSamples = [];
+
+      if (faceEmbedding.length > 0) {
+        samples.push({ modality: "face", embedding: faceEmbedding });
+      }
+
+      if (gaitEmbedding.length > 0) {
+        samples.push({ modality: "gait", embedding: gaitEmbedding });
+      }
+
+      const faceCaptureSample = buildCaptureSample(
+        "face",
+        formData.get("faceRawSignal"),
+        formData.get("faceFrameCount"),
+        formData.get("faceCaptureDuration"),
+        formData.get("faceSensorConfidence")
+      );
+      const gaitCaptureSample = buildCaptureSample(
+        "gait",
+        formData.get("gaitRawSignal"),
+        formData.get("gaitFrameCount"),
+        formData.get("gaitCaptureDuration"),
+        formData.get("gaitSensorConfidence")
+      );
+
+      if (faceCaptureSample) {
+        captureSamples.push(faceCaptureSample);
+      }
+
+      if (gaitCaptureSample) {
+        captureSamples.push(gaitCaptureSample);
+      }
+
       const payload = {
         subjectId: formData.get("subjectId"),
         primaryModality: formData.get("primaryModality"),
         confidenceScore: Number(formData.get("confidenceScore")),
         sourceChannel: formData.get("sourceChannel"),
+        isOffHours: formData.get("isOffHours") === "on",
+        targetResource: formData.get("targetResource") || undefined,
         modalityScores: {
-          fingerprint: Number(formData.get("fingerprintScore") || 0),
-          facial: Number(formData.get("facialScore") || 0),
-          iris: Number(formData.get("irisScore") || 0)
-        }
+          face: Number(formData.get("faceScore") || 0),
+          gait: Number(formData.get("gaitScore") || 0)
+        },
+        biometricEvaluationRequest: samples.length > 0 || captureSamples.length > 0 ? {
+          samples,
+          captureSamples,
+          strategy: "score_level",
+          baseThreshold: 0.75,
+          adaptationWindow: 3,
+          riskScore: Number(formData.get("confidenceScore") || 0) / 100,
+          environmentQuality: 1
+        } : undefined
       };
 
       const response = await apiRequest("/authentication/attempts", {
@@ -270,10 +385,17 @@ function bindAuditPage() {
 function bindMonitoringPage() {
   const form = document.getElementById("create-monitoring-event-form");
   const button = document.getElementById("load-monitoring-events");
+  const controllerButton = document.getElementById("load-controller-overview");
 
   async function loadEvents() {
     const response = await apiRequest("/monitoring/events");
     renderTable("monitoring-table", response.events);
+  }
+
+  async function loadControllerOverview() {
+    const response = await apiRequest("/monitoring/controller/overview?limit=25");
+    renderTable("controller-device-table", response.deviceStates);
+    renderTable("controller-events-table", response.controllerEvents);
   }
 
   if (form) {
@@ -298,7 +420,12 @@ function bindMonitoringPage() {
     button.addEventListener("click", () => loadEvents().catch((error) => alert(error.message)));
   }
 
+  if (controllerButton) {
+    controllerButton.addEventListener("click", () => loadControllerOverview().catch((error) => alert(error.message)));
+  }
+
   loadEvents().catch(() => null);
+  loadControllerOverview().catch(() => null);
 }
 
 function bindSettingsPage() {
