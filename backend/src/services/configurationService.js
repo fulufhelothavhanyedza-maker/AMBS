@@ -1,7 +1,7 @@
-const { query } = require("../config/database");
+const database = require("../config/database");
 
 async function getConfigurationValue(key, fallbackValue) {
-  const result = await query(
+  const result = await database.query(
     `
       SELECT value
       FROM system_configuration
